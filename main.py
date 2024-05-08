@@ -19,8 +19,6 @@ def remove_padding(data: np.ndarray[np.uint8], shape: tuple[int, int]) -> np.nda
 
     (h, w) = shape
 
-    print(h, w)
-
     return data[0:h, 0:w]
 
 def split(data: np.ndarray[np.uint8]) -> list[np.ndarray[np.uint8]]: 
@@ -43,7 +41,6 @@ def join(blocks: list[np.ndarray[np.uint8]], shape: tuple[int, int]) -> np.ndarr
     """
 
     (h, w) = shape
-    print(h, w)
 
     data = np.zeros(shape)
 
@@ -69,3 +66,6 @@ print(blocks)
 
 b = join(blocks, padded.shape)
 print(b)
+
+original = remove_padding(b, shape)
+print(original)
