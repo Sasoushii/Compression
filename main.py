@@ -40,9 +40,9 @@ def join(blocks: list[np.ndarray[np.uint8]], shape: tuple[int, int]) -> np.ndarr
     Reconstitue les octets qui représentent une image à partir de blocs de forme 4x4
     """
 
-    (h, w) = shape
+    [h, w] = map(lambda n: n + 4 - n % 4, shape)
 
-    data = np.zeros(shape)
+    data = np.zeros((h, w))
 
     for x in range(0, w, 4):
         for y in range(0, h, 4):
@@ -58,14 +58,8 @@ mat = np.array([
 ], np.uint8)
 shape = mat.shape
 
-padded = add_padding(mat)
-print(padded)
-
-blocks = split(padded)
+blocks = split(add_padding(mat))
 print(blocks)
 
-b = join(blocks, padded.shape)
-print(b)
-
-original = remove_padding(b, shape)
+original = remove_padding(join(blocks, shape), shape)
 print(original)
