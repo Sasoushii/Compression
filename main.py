@@ -23,13 +23,29 @@ def remove_padding(data: np.ndarray[np.uint8], shape: tuple[int, int]) -> np.nda
 
     return data[0:h, 0:w]
 
+def split(data: np.ndarray[np.uint8]) -> list[np.ndarray[np.uint8]]: 
+    """
+    Découpe les octets qui représentent une image en des blocs de forme 4x4
+    """
+
+    (h, w) = data.shape
+    
+    res = []
+    for x in range(0, w, 4):
+        for y in range(0, h, 4):
+            res.append(data[y:y+4, x:x+4])
+
+    return res
+
 mat = np.array([
-    [0, 0, 1],
-    [0, 1, 0],
+    [1, 2, 3, 4, 5],
+    [6, 7, 8, 9, 10],
+    [11, 12, 13, 14, 15],
 ], np.uint8)
 shape = mat.shape
 
 padded = add_padding(mat)
 print(padded)
 
-print(remove_padding(padded, shape))
+blocks = split(padded)
+print(blocks)
