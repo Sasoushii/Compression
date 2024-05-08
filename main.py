@@ -6,9 +6,10 @@ def add_padding(data: np.ndarray[np.uint8]) -> np.ndarray[np.uint8]:
     """
 
     (h, w) = data.shape
+    fixed_w = 4 - (w % 4)
 
-    data = np.hstack((data, np.zeros((h, 4 - (w % 4)))))
-    data = np.vstack((data, np.zeros((4 - (h % 4), 4))))
+    data = np.hstack((data, np.zeros((h, fixed_w))))
+    data = np.vstack((data, np.zeros((4 - (h % 4), w + fixed_w))))
     return data
 
 def remove_padding(data: np.ndarray[np.uint8], shape: tuple[int, int]) -> np.ndarray[np.uint8]:
