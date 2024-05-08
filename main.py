@@ -65,6 +65,41 @@ def join(blocks: list[np.ndarray[np.uint8]], shape: tuple[int, int]) -> np.ndarr
 
     return data
 
+def truncate(n: int, p: int):
+    """
+    Tronque un entier en retirant les p bits les moins significatifs de l'entier
+    """
+    return n >> p
+
+def palette(a: int, b: int):
+    """
+    Renvoie une palette à partir de deux pixels tronqués
+    """
+    return [np.round(p) for p in [a, 2 * a / 3 + b / 3, a / 3 + 2 * b / 3, b]]
+
+def truncate_pixel(px: np.ndarray[np.uint8]) -> int:
+    """
+    Renvoie un pixel tronqué, un entier codé de la manière suivante : 5 bits pour le rouge, 6 bits pour le vert, 5 bits pour le bleu
+    """
+    (r, g, b) = px
+    tr = truncate(r, 3)
+    tg = truncate(g, 2)
+    tb = truncate(b, 3)
+
+    print(tr, tg, tb)
+
+    return tb | tg << 5 | tr << 11
+
+def detruncate_pixel(px: int) -> np.ndarray[np.uint8]:
+    """
+    Renvoie un pixel assez proche de l'original à partir d'un entier de 16 bits
+    """
+    r = (px >> 11) << 3
+    g = (px >> 5 & 0x3F) << 2
+    b = (px & 0x1F) << 3
+
+    return np.array([r, g, b], dtype=np.uint8)
+
 mat = load_image("image.jpg")
 shape = mat.shape
 
