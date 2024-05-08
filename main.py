@@ -37,6 +37,23 @@ def split(data: np.ndarray[np.uint8]) -> list[np.ndarray[np.uint8]]:
 
     return res
 
+def join(blocks: list[np.ndarray[np.uint8]], shape: tuple[int, int]) -> np.ndarray[np.uint8]:
+    """
+    Reconstitue les octets qui représentent une image à partir de blocs de forme 4x4
+    """
+
+    (h, w) = shape
+    print(h, w)
+
+    data = np.zeros(shape)
+
+    for x in range(0, w, 4):
+        for y in range(0, h, 4):
+            block = blocks[(x // 4) * (h // 4) + (y // 4)]
+            data[y:y+4, x:x+4] = block
+
+    return data
+
 mat = np.array([
     [1, 2, 3, 4, 5],
     [6, 7, 8, 9, 10],
@@ -49,3 +66,6 @@ print(padded)
 
 blocks = split(padded)
 print(blocks)
+
+b = join(blocks, padded.shape)
+print(b)
