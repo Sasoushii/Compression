@@ -1,3 +1,24 @@
+<<<<<<< HEAD
+=======
+import numpy as np
+from PIL import Image
+
+def load_image(file: str) -> np.ndarray[np.uint8]:
+    img = Image.open(file)
+    img.load()
+
+    data = np.asarray(img, dtype=np.uint8)
+    return data
+
+def save_image(file: str, data: np.ndarray[np.uint8]):
+    img = Image.fromarray(data.astype(np.uint8), mode="RGB")
+    img.save(file)
+
+def padded_shape(shape: tuple[int]) -> tuple[int]:
+    res = [n + 4 - n % 4 for n in shape]
+    res[2] = 3
+    return tuple(res)
+>>>>>>> main
 
 
 import PIL
@@ -23,20 +44,31 @@ def add_padding(data: np.ndarray[np.uint8]) -> np.ndarray[np.uint8]:
     Ajoute du padding sur les octets qui représentent une image, afin que ses dimensions soient multiples de 4
     """
 
+<<<<<<< HEAD
     (h, w) = data.shape
     fixed_w = 4 - (w % 4)
 
     data = np.hstack((data, np.zeros((h, fixed_w))))
     data = np.vstack((data, np.zeros((4 - (h % 4), w + fixed_w))))
     return data
+=======
+    (h, w, _) = data.shape
+    result = np.zeros(padded_shape(data.shape))
+    result[0:h, 0:w, 0:3] = data
+    return result
+>>>>>>> main
 
 def remove_padding(data: np.ndarray[np.uint8], shape: tuple[int, int]) -> np.ndarray[np.uint8]:
     """
     Retire le padding des octets qui représentent une image.
     """
 
+<<<<<<< HEAD
     (h, w) = shape
 
+=======
+    (h, w, _) = shape
+>>>>>>> main
     return data[0:h, 0:w]
 
 def split(data: np.ndarray[np.uint8]) -> list[np.ndarray[np.uint8]]: 
@@ -44,7 +76,11 @@ def split(data: np.ndarray[np.uint8]) -> list[np.ndarray[np.uint8]]:
     Découpe les octets qui représentent une image en des blocs de forme 4x4
     """
 
+<<<<<<< HEAD
     (h, w) = data.shape
+=======
+    (h, w, _) = data.shape
+>>>>>>> main
     
     res = []
     for x in range(0, w, 4):
@@ -58,9 +94,15 @@ def join(blocks: list[np.ndarray[np.uint8]], shape: tuple[int, int]) -> np.ndarr
     Reconstitue les octets qui représentent une image à partir de blocs de forme 4x4
     """
 
+<<<<<<< HEAD
     [h, w] = map(lambda n: n + 4 - n % 4, shape)
 
     data = np.zeros((h, w))
+=======
+    (h, w, _) = padded_shape(shape)
+
+    data = np.zeros((h, w, 3))
+>>>>>>> main
 
     for x in range(0, w, 4):
         for y in range(0, h, 4):
@@ -69,6 +111,7 @@ def join(blocks: list[np.ndarray[np.uint8]], shape: tuple[int, int]) -> np.ndarr
 
     return data
 
+<<<<<<< HEAD
 mat = np.array([
     [1, 2, 3, 4, 5],
     [6, 7, 8, 9, 10],
@@ -134,3 +177,57 @@ def tronque(n,p):
 def prochepixel(p,q):
     np.linalg.norm(p.astype(int) - q)
 #-----------SECTION TEST------------------------
+=======
+def truncate(n: int, p: int):
+    """
+    Tronque un entier en retirant les p bits les moins significatifs de l'entier
+    """
+    return n >> p
+
+def create_palette(a: int, b: int):
+    """
+    Renvoie une palette à partir de deux pixels tronqués
+    """
+    return [np.round(p) for p in [a, 2 * a / 3 + b / 3, a / 3 + 2 * b / 3, b]]
+
+def truncate_pixel(px: np.ndarray[np.uint8]) -> int:
+    """
+    Renvoie un pixel tronqué, un entier codé de la manière suivante : 5 bits pour le rouge, 6 bits pour le vert, 5 bits pour le bleu
+    """
+    (r, g, b) = px
+    tr = truncate(r, 3)
+    tg = truncate(g, 2)
+    tb = truncate(b, 3)
+
+    return tb | tg << 5 | tr << 11
+
+def detruncate_pixel(px: int) -> np.ndarray[np.uint8]:
+    """
+    Renvoie un pixel assez proche de l'original à partir d'un entier de 16 bits
+    """
+    r = (px >> 11) << 3
+    g = (px >> 5 & 0x3F) << 2
+    b = (px & 0x1F) << 3
+
+    return np.array([r, g, b], dtype=np.uint8)
+
+def find_nearest(palette: np.ndarray[np.uint8], px: np.ndarray[np.uint8]):
+    nearest = 0
+    dist = np.inf
+    for i in range(len(palette)):
+        new_dist = np.linalg.norm(px.astype(int) - palette[i])
+        print(new_dist)
+        if new_dist < dist:
+            dist = new_dist
+            nearest = i
+
+    return nearest
+
+mat = load_image("image.jpg")
+shape = mat.shape
+
+blocks = split(add_padding(mat))
+removed = remove_padding(join(blocks, shape), shape)
+
+save_image("output.jpg", removed)
+>>>>>>> main
