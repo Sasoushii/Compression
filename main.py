@@ -110,6 +110,75 @@ def find_nearest(palette: np.ndarray[np.uint8], px: np.ndarray[np.uint8]):
 
     return nearest
 
+
+
+
+
+
+
+
+
+
+#IV ecriture dans un fichier
+def imginfo(path, type_fichier, hauteur, largeur, codes_patchs):
+    with open(path, "w") as f:
+        f.write(type_fichier + "\n")
+        dimensions = str(hauteur) + " " + str(largeur)
+        f.write(dimensions + "\n")
+        
+        # Écrire les codes des patchs
+        for code in codes_patchs:
+            f.write(str(code) + "\n")
+
+path="res.txt"
+type_fichier = "BC1"
+hauteur = 200
+largeur = 300
+codes_patchs=[1,3]
+
+#V décompression
+
+def lectureBC1(path):
+    listeblocs = []
+    with open(path, "r") as f:
+        lignes = f.readlines()
+        for ligne in lignes:
+            listeblocs.append(int(ligne.strip()))
+    return listeblocs
+
+indices=[]
+def transcouleurs(n):
+    # Séparer l'entier en deux valeurs de couleur et un tableau d'indices
+    # Prendre les 8 premiers bits, puis les 8 bits suivants, et les 8 derniers bits
+    couleur1 = (n // (256 * 256)) % 256 # toutes les combinaisons possibles de deux valeurs sur 8 bits (de 0 à 255)
+    couleur2 = (n // 256) % 256
+    indice = n % 256
+    # Mettre l'indice dans une liste
+    indices.append(indice)
+    # Renvoyer les valeurs séparées
+    return couleur1, couleur2, indices
+
+def reconstruire_image(blocs):
+    image = []
+    for bloc in blocs:
+        couleur1, couleur2, indices = transcouleurs(bloc)
+        for indice in indices: #ajouts des pixels 
+            if indice == 0:
+                image.append(couleur1)
+            elif indice == 1:
+                image.append(couleur2)
+    return image
+
+
+
+
+
+
+
+
+#------Zone TESTING-----
+
+
 mat = load_image("image.jpg")
 shape = mat.shape
 
@@ -117,3 +186,6 @@ blocks = split(add_padding(mat))
 removed = remove_padding(join(blocks, shape), shape)
 
 save_image("output.jpg", removed)
+
+imginfo(path,type_fichier,hauteur,largeur,codes_patchs)
+
