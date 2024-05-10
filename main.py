@@ -112,6 +112,29 @@ def find_nearest(palette: np.ndarray[np.uint8], px: np.ndarray[np.uint8]):
 
     return nearest
 
+def create_patch(block: np.ndarray[np.uint8], palette: np.ndarray[np.uint8], a: int, b: int) -> int:
+    """
+    Crée un patch à partir d'un block, une palette, et deux couleurs a et b.
+    """
+    res = np.int64(0)
+    for x in range(0, 4):
+        for y in range(0, 4):
+            idx = find_nearest(palette, block[x, y])
+            res |= np.int64(idx) << ((np.int64(x) * 4 + np.int64(y)) * 2)
+
+    shift = 32
+    for (r, g, b) in [detruncate_pixel(color) for color in [a, b]]:
+        res |= np.int64(b) << shift
+        shift += 5
+
+        res |= np.int64(g) << shift
+        shift += 6
+
+        res |= np.int64(r) << shift
+        shift += 5
+
+    return res
+
 palette = create_palette(
     truncate_pixel(np.array([129, 30, 45])),
     truncate_pixel(np.array([140, 50, 0])),
