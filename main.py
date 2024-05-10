@@ -75,7 +75,7 @@ def create_palette(a: int, b: int):
     """
     Renvoie une palette à partir de deux pixels tronqués
     """
-    return [np.round(p) for p in [a, 2 * a / 3 + b / 3, a / 3 + 2 * b / 3, b]]
+    return [np.round(p).astype(int) for p in [a, 2 * a / 3 + b / 3, a / 3 + 2 * b / 3, b]]
 
 def truncate_pixel(px: np.ndarray[np.uint8]) -> int:
     """
@@ -99,16 +99,23 @@ def detruncate_pixel(px: int) -> np.ndarray[np.uint8]:
     return np.array([r, g, b], dtype=np.uint8)
 
 def find_nearest(palette: np.ndarray[np.uint8], px: np.ndarray[np.uint8]):
+    """
+    Renvoie l'index de la palette le plus proche du pixel
+    """
     nearest = 0
     dist = np.inf
     for i in range(len(palette)):
-        new_dist = np.linalg.norm(px.astype(int) - palette[i])
-        print(new_dist)
+        new_dist = np.linalg.norm(px.astype(int) - detruncate_pixel(palette[i]))
         if new_dist < dist:
             dist = new_dist
             nearest = i
 
     return nearest
+
+palette = create_palette(
+    truncate_pixel(np.array([129, 30, 45])),
+    truncate_pixel(np.array([140, 50, 0])),
+)
 
 mat = load_image("image.jpg")
 shape = mat.shape
