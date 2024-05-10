@@ -75,7 +75,7 @@ def create_palette(a: int, b: int):
     """
     Renvoie une palette à partir de deux pixels tronqués
     """
-    return [np.round(p) for p in [a, 2 * a / 3 + b / 3, a / 3 + 2 * b / 3, b]]
+    return [np.round(p).astype(int) for p in [a, 2 * a / 3 + b / 3, a / 3 + 2 * b / 3, b]]
 
 def truncate_pixel(px: np.ndarray[np.uint8]) -> int:
     """
@@ -99,17 +99,41 @@ def detruncate_pixel(px: int) -> np.ndarray[np.uint8]:
     return np.array([r, g, b], dtype=np.uint8)
 
 def find_nearest(palette: np.ndarray[np.uint8], px: np.ndarray[np.uint8]):
+    """
+    Renvoie l'index de la palette le plus proche du pixel
+    """
     nearest = 0
     dist = np.inf
     for i in range(len(palette)):
-        new_dist = np.linalg.norm(px.astype(int) - palette[i])
-        print(new_dist)
+        new_dist = np.linalg.norm(px.astype(int) - detruncate_pixel(palette[i]))
         if new_dist < dist:
             dist = new_dist
             nearest = i
 
     return nearest
 
+def create_patch(block: np.ndarray[np.uint8], palette: np.ndarray[np.uint8], a: int, b: int) -> int:
+    """
+    Crée un patch à partir d'un block, une palette, et deux couleurs a et b.
+    """
+    res = np.int64(0)
+    for x in range(0, 4):
+        for y in range(0, 4):
+            idx = find_nearest(palette, block[x, y])
+            res |= np.int64(idx) << ((np.int64(x) * 4 + np.int64(y)) * 2)
+
+    shift = 32
+    for (r, g, b) in [detruncate_pixel(color) for color in [a, b]]:
+        res |= np.int64(b) << shift
+        shift += 5
+
+        res |= np.int64(g) << shift
+        shift += 6
+
+        res |= np.int64(r) << shift
+        shift += 5
+
+    return res
 
 
 
@@ -130,20 +154,15 @@ def imginfo(path, type_fichier, hauteur, largeur, codes_patchs):
         for code in codes_patchs:
             f.write(str(code) + "\n")
 
-path="res.txt"
-type_fichier = "BC1"
-hauteur = 200
-largeur = 300
-codes_patchs=[1,3]
 
 #V décompression
 
 def lectureBC1(path):
-    listeblocs = []
+    listeblocs = [] 
     with open(path, "r") as f:
-        lignes = f.readlines()
+        lignes = f.readlines()[2:]  # on saut les dexu lignes de description pour traiter les entiers de blocs
         for ligne in lignes:
-            listeblocs.append(int(ligne.strip()))
+            listeblocs.append(ligne.strip())
     return listeblocs
 
 indices=[]
@@ -157,6 +176,31 @@ def transcouleurs(n):
     indices.append(indice)
     # Renvoyer les valeurs séparées
     return couleur1, couleur2, indices
+
+def decode_patch_integer(patch_integer):
+    # Extraire les couleurs principales (a) et secondaires (b)
+    a = [patch_integer % 32, (patch_integer >> 5) % 64, (patch_integer >> 11) % 32]
+    b = [(patch_integer >> 16) % 32, (patch_integer >> 21) % 64, (patch_integer >> 27) % 32]
+
+    # Extraire les indices des pixels dans le patch
+    indices = []
+    for _ in range(16):
+        indices.append(patch_integer % 4)
+        patch_integer >>= 2
+    
+    # Reconstruire le patch à partir des couleurs et des indices
+    patch = []
+    for i in range(4):
+        row = []
+        for j in range(4):
+            idx = i * 4 + j
+            color_idx = indices[idx]
+            color = a if color_idx == 0 else b
+            row.append(color)
+        patch.append(row)
+    
+    return patch   
+
 
 def reconstruire_image(blocs):
     image = []
@@ -179,6 +223,17 @@ def reconstruire_image(blocs):
 #------Zone TESTING-----
 
 
+path="res.txt"
+type_fichier = "BC1"
+hauteur = 200
+largeur = 300
+codes_patchs=[1,3]
+
+palette = create_palette(
+    truncate_pixel(np.array([129, 30, 45])),
+    truncate_pixel(np.array([140, 50, 0])),
+)
+
 mat = load_image("image.jpg")
 shape = mat.shape
 
@@ -187,5 +242,5 @@ removed = remove_padding(join(blocks, shape), shape)
 
 save_image("output.jpg", removed)
 
-imginfo(path,type_fichier,hauteur,largeur,codes_patchs)
-
+print(imginfo(path,type_fichier,hauteur,largeur,codes_patchs))
+print(lectureBC1("res.txt"))
