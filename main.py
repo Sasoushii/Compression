@@ -160,7 +160,7 @@ def imginfo(path, type_fichier, hauteur, largeur, codes_patchs):
 def lectureBC1(path):
     listeblocs = [] 
     with open(path, "r") as f:
-        lignes = f.readlines()[2:]  # on saut les dexu lignes de description pour traiter les entiers de blocs
+        lignes = f.readlines()[2:]  # on saut les deux lignes de description pour traiter les entiers de blocs
         for ligne in lignes:
             listeblocs.append(ligne.strip())
     return listeblocs
@@ -186,7 +186,7 @@ def decode_patch_integer(patch_integer):
     indices = []
     for _ in range(16):
         indices.append(patch_integer % 4)
-        patch_integer >>= 2
+        patch_integer = patch_integer >> 2
     
     # Reconstruire le patch à partir des couleurs et des indices
     patch = []
