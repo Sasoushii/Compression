@@ -135,15 +135,34 @@ def create_patch(block: np.ndarray[np.uint8], palette: np.ndarray[np.uint8], a: 
 
     return res
 
-palette = create_palette(
-    truncate_pixel(np.array([129, 30, 45])),
-    truncate_pixel(np.array([140, 50, 0])),
-)
+def ab_minmax(block: np.ndarray[np.uint8]) -> tuple[int, int]:
+    m = [255, 255, 255]
+    M = [0, 0, 0]
+
+    for i in range(4):
+        for j in range(4):
+            color = block[i, j]
+
+            for k in range(3):
+                if color[k] < m[k]:
+                    m[k] = color[k]
+                
+                if color[k] > M[k]:
+                    M[k] = color[k]
+    
+    return truncate_pixel(m), truncate_pixel(M)
 
 mat = load_image("image.jpg")
 shape = mat.shape
 
 blocks = split(add_padding(mat))
+a, b = ab_minmax(blocks[0])
+palette = create_palette(a, b)
+patch = create_patch(blocks[0], palette, a, b)
+
+print(patch)
+print(blocks[0])
+
 removed = remove_padding(join(blocks, shape), shape)
 
 save_image("output.jpg", removed)
