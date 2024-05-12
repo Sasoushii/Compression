@@ -152,17 +152,21 @@ def ab_minmax(block: np.ndarray[np.uint8]) -> tuple[int, int]:
     
     return truncate_pixel(m), truncate_pixel(M)
 
-mat = load_image("image.jpg")
-shape = mat.shape
+def main():
+    mat = load_image("image.jpg")
+    shape = mat.shape
 
-blocks = split(add_padding(mat))
-a, b = ab_minmax(blocks[0])
-palette = create_palette(a, b)
-patch = create_patch(blocks[0], palette, a, b)
+    blocks = split(add_padding(mat))
+    a, b = ab_minmax(blocks[0])
+    palette = create_palette(a, b)
+    patch = create_patch(blocks[0], palette, a, b)
 
-print(patch)
-print(blocks[0])
+    print(patch)
+    print(blocks[0])
 
-removed = remove_padding(join(blocks, shape), shape)
+    removed = remove_padding(join(blocks, shape), shape)
 
-save_image("output.jpg", removed)
+    save_image("output.jpg", removed)
+
+if __name__ == '__main__':
+    main()
