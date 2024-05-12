@@ -2,6 +2,9 @@ import numpy as np
 from PIL import Image
 
 def load_image(file: str) -> np.ndarray[np.uint8]:
+    """
+    Charge une image depuis le disque et renvoie les données dans un tableau numpy
+    """
     img = Image.open(file)
     img.load()
 
@@ -9,21 +12,27 @@ def load_image(file: str) -> np.ndarray[np.uint8]:
     return data
 
 def save_image(file: str, data: np.ndarray[np.uint8]):
+    """
+    Enregistre une image sur le disque depuis les données d'un tableau numpy
+    """
     img = Image.fromarray(data.astype(np.uint8), mode="RGB")
     img.save(file)
 
 def padded_shape(shape: tuple[int]) -> tuple[int]:
+    """
+    Renvoie les dimensions d'une image avec la correction de remplissage
+    """
     res = [n + 4 - n % 4 for n in shape]
     res[2] = 3
     return tuple(res)
 
 def add_padding(data: np.ndarray[np.uint8]) -> np.ndarray[np.uint8]:
     """
-    Ajoute du padding sur les octets qui représentent une image, afin que ses dimensions soient multiples de 4
+    Ajoute du remplissage sur les octets qui représentent une image, afin que ses dimensions soient multiples de 4
     """
 
     (h, w, _) = data.shape
-    result = np.zeros(padded_shape(data.shape))
+    result = np.zeros(padded_shape(data.shape), dtype=np.uint8)
     result[0:h, 0:w, 0:3] = data
     return result
 
@@ -135,100 +144,6 @@ def create_patch(block: np.ndarray[np.uint8], palette: np.ndarray[np.uint8], a: 
 
     return res
 
-
-
-
-
-
-
-
-
-#IV ecriture dans un fichier
-def imginfo(path, type_fichier, hauteur, largeur, codes_patchs):
-    with open(path, "w") as f:
-        f.write(type_fichier + "\n")
-        dimensions = str(hauteur) + " " + str(largeur)
-        f.write(dimensions + "\n")
-        
-        # Écrire les codes des patchs
-        for code in codes_patchs:
-            f.write(str(code) + "\n")
-
-
-#V décompression
-
-def lectureBC1(path):
-    listeblocs = [] 
-    with open(path, "r") as f:
-        lignes = f.readlines()[2:]  # on saut les deux lignes de description pour traiter les entiers de blocs
-        for ligne in lignes:
-            listeblocs.append(ligne.strip())
-    return listeblocs
-
-indices=[]
-def transcouleurs(n):
-    # Séparer l'entier en deux valeurs de couleur et un tableau d'indices
-    # Prendre les 8 premiers bits, puis les 8 bits suivants, et les 8 derniers bits
-    couleur1 = (n // (256 * 256)) % 256 # toutes les combinaisons possibles de deux valeurs sur 8 bits (de 0 à 255)
-    couleur2 = (n // 256) % 256
-    indice = n % 256
-    # Mettre l'indice dans une liste
-    indices.append(indice)
-    # Renvoyer les valeurs séparées
-    return couleur1, couleur2, indices
-
-def decode_patch_integer(patch_integer):
-    # Extraire les couleurs principales (a) et secondaires (b)
-    a = [patch_integer % 32, (patch_integer >> 5) % 64, (patch_integer >> 11) % 32]
-    b = [(patch_integer >> 16) % 32, (patch_integer >> 21) % 64, (patch_integer >> 27) % 32]
-
-    # Extraire les indices des pixels dans le patch
-    indices = []
-    for _ in range(16):
-        indices.append(patch_integer % 4)
-        patch_integer = patch_integer >> 2
-    
-    # Reconstruire le patch à partir des couleurs et des indices
-    patch = []
-    for i in range(4):
-        row = []
-        for j in range(4):
-            idx = i * 4 + j
-            color_idx = indices[idx]
-            color = a if color_idx == 0 else b
-            row.append(color)
-        patch.append(row)
-    
-    return patch   
-
-
-def reconstruire_image(blocs):
-    image = []
-    for bloc in blocs:
-        couleur1, couleur2, indices = transcouleurs(bloc)
-        for indice in indices: #ajouts des pixels 
-            if indice == 0:
-                image.append(couleur1)
-            elif indice == 1:
-                image.append(couleur2)
-    return image
-
-
-
-
-
-
-
-
-#------Zone TESTING-----
-
-
-path="res.txt"
-type_fichier = "BC1"
-hauteur = 200
-largeur = 300
-codes_patchs=[1,3]
-
 palette = create_palette(
     truncate_pixel(np.array([129, 30, 45])),
     truncate_pixel(np.array([140, 50, 0])),
@@ -241,6 +156,3 @@ blocks = split(add_padding(mat))
 removed = remove_padding(join(blocks, shape), shape)
 
 save_image("output.jpg", removed)
-
-print(imginfo(path,type_fichier,hauteur,largeur,codes_patchs))
-print(lectureBC1("res.txt"))
