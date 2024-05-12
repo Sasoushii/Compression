@@ -2,6 +2,9 @@ import numpy as np
 from PIL import Image
 
 def load_image(file: str) -> np.ndarray[np.uint8]:
+    """
+    Charge une image depuis le disque et renvoie les données dans un tableau numpy
+    """
     img = Image.open(file)
     img.load()
 
@@ -9,17 +12,23 @@ def load_image(file: str) -> np.ndarray[np.uint8]:
     return data
 
 def save_image(file: str, data: np.ndarray[np.uint8]):
+    """
+    Enregistre une image sur le disque depuis les données d'un tableau numpy
+    """
     img = Image.fromarray(data.astype(np.uint8), mode="RGB")
     img.save(file)
 
 def padded_shape(shape: tuple[int]) -> tuple[int]:
+    """
+    Renvoie les dimensions d'une image avec la correction de remplissage
+    """
     res = [n + 4 - n % 4 for n in shape]
     res[2] = 3
     return tuple(res)
 
 def add_padding(data: np.ndarray[np.uint8]) -> np.ndarray[np.uint8]:
     """
-    Ajoute du padding sur les octets qui représentent une image, afin que ses dimensions soient multiples de 4
+    Ajoute du remplissage sur les octets qui représentent une image, afin que ses dimensions soient multiples de 4
     """
 
     (h, w, _) = data.shape
@@ -136,6 +145,9 @@ def create_patch(block: np.ndarray[np.uint8], palette: np.ndarray[np.uint8], a: 
     return res
 
 def ab_minmax(block: np.ndarray[np.uint8]) -> tuple[int, int]:
+    """
+    Détermine les couleurs a et b depuis un bloc
+    """
     m = [255, 255, 255]
     M = [0, 0, 0]
 
