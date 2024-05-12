@@ -1,6 +1,17 @@
 import numpy as np
 from PIL import Image
 
+WELCOME = """
+______      _   _                  ______  _____  __    _____           _ 
+| ___ \    | | | |                 | ___ \/  __ \/  |  |_   _|         | |
+| |_/ /   _| |_| |__   ___  _ __   | |_/ /| /  \/`| |    | | ___   ___ | |
+|  __/ | | | __| '_ \ / _ \| '_ \  | ___ \| |     | |    | |/ _ \ / _ \| |
+| |  | |_| | |_| | | | (_) | | | | | |_/ /| \__/\_| |_   | | (_) | (_) | |
+\_|   \__, |\__|_| |_|\___/|_| |_| \____/  \____/\___/   \_/\___/ \___/|_|
+       __/ |                                                              
+      |___/                                                               
+"""
+
 def load_image(file: str) -> np.ndarray[np.uint8]:
     """
     Charge une image depuis le disque et renvoie les données dans un tableau numpy
@@ -192,7 +203,7 @@ def encode(path: str, patches: list[int], shape: tuple[int, int]):
         for patch in patches:
             f.write(f"{str(patch)}\n")
 
-def decode(path: str):
+def decode(path: str) -> tuple[np.ndarray[np.uint8], tuple[int, int]]:
     """
     Décode le fichier au chemin d'accès spécifié
     """
@@ -203,30 +214,40 @@ def decode(path: str):
         [h, w] = [int(n) for n in f.readline().split()]
         patches = [int(line) for line in f.readlines()]
 
-        return join([decode_block(patch) for patch in patches], (h, w, 3))
+        return join([decode_block(patch) for patch in patches], (h, w, 3)), (h, w, 3)
 
 
 def main():
-    mat = load_image("image.jpg")
-    shape = mat.shape
+    print(WELCOME)
 
-    blocks = split(add_padding(mat))
+    print("What would you like to do?")
+    print("* encode")
+    print("* decode")
 
-    patches = []
-    for block in blocks:
-        a, b = ab_minmax(block)
-        palette = create_palette(a, b)
+    cmd = input("> ")
 
-        patches.append(encode_block(block, palette, a, b))
+    print("Enter file path")
+    path = input("> ")
 
-    encode("compressed.bc1", patches, shape)
+    match cmd.lower():
+        case "encode":
+            mat = load_image(path)
+            shape = mat.shape
+            blocks = split(add_padding(mat))
 
-    removed = remove_padding(join(blocks, shape), shape)
+            patches = []
+            for block in blocks:
+                a, b = ab_minmax(block)
+                palette = create_palette(a, b)
 
-    save_image("output.jpg", removed)
-    data = decode("compressed.bc1")
+                patches.append(encode_block(block, palette, a, b))
 
-    save_image("compressed.jpg", remove_padding(data, shape))
+            encode("compressed.bc1", patches, shape)
+        case "decode":
+            data, shape = decode("compressed.bc1")
+            save_image("compressed.jpg", remove_padding(data, shape))
+
+    print("Done")
 
 if __name__ == '__main__':
     main()
