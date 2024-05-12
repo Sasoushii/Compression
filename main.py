@@ -23,7 +23,7 @@ def add_padding(data: np.ndarray[np.uint8]) -> np.ndarray[np.uint8]:
     """
 
     (h, w, _) = data.shape
-    result = np.zeros(padded_shape(data.shape))
+    result = np.zeros(padded_shape(data.shape), dtype=np.uint8)
     result[0:h, 0:w, 0:3] = data
     return result
 
