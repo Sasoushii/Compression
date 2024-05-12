@@ -268,7 +268,7 @@ print(lectureBC1("result.bc1"))
 #Q10:
 print(mat.shape)
 #lecture du fichier compressé pour obtenir les dimensions de l'image originelle
-
+print(decompress_patch(6,palette))
 
 blocks = split(add_padding(mat))
 patchcodes=lectureBC1("result.bc1")
