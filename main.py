@@ -121,7 +121,7 @@ def find_nearest(palette: np.ndarray[np.uint8], px: np.ndarray[np.uint8]):
 
     return nearest
 
-def encode_patch(block: np.ndarray[np.uint8], palette: np.ndarray[np.uint8], a: int, b: int) -> int:
+def encode_block(block: np.ndarray[np.uint8], palette: np.ndarray[np.uint8], a: int, b: int) -> int:
     """
     Crée un patch à partir d'un block, une palette, et deux couleurs a et b.
     """
@@ -136,7 +136,7 @@ def encode_patch(block: np.ndarray[np.uint8], palette: np.ndarray[np.uint8], a: 
 
     return res
 
-def decode_patch(patch: int) -> np.ndarray[np.uint8]:
+def decode_block(patch: int) -> np.ndarray[np.uint8]:
     """
     Crée un bloc à partir d'un patch.
     """
@@ -203,7 +203,7 @@ def decode(path: str):
         [h, w] = [int(n) for n in f.readline().split()]
         patches = [int(line) for line in f.readlines()]
 
-        return join([decode_patch(patch) for patch in patches], (h, w, 3))
+        return join([decode_block(patch) for patch in patches], (h, w, 3))
 
 
 def main():
@@ -217,7 +217,7 @@ def main():
         a, b = ab_minmax(block)
         palette = create_palette(a, b)
 
-        patches.append(encode_patch(block, palette, a, b))
+        patches.append(encode_block(block, palette, a, b))
 
     encode("compressed.bc1", patches, shape)
 
