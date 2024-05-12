@@ -144,15 +144,143 @@ def create_patch(block: np.ndarray[np.uint8], palette: np.ndarray[np.uint8], a: 
 
     return res
 
-palette = create_palette(
-    truncate_pixel(np.array([129, 30, 45])),
-    truncate_pixel(np.array([140, 50, 0])),
-)
+def ab_minmax(block: np.ndarray[np.uint8]) -> tuple[int, int]:
+    """
+    Détermine les couleurs a et b depuis un bloc
+    """
+    m = [255, 255, 255]
+    M = [0, 0, 0]
+
+    for i in range(4):
+        for j in range(4):
+            color = block[i, j]
+
+            for k in range(3):
+                if color[k] < m[k]:
+                    m[k] = color[k]
+                
+                if color[k] > M[k]:
+                    M[k] = color[k]
+    
+    return truncate_pixel(m), truncate_pixel(M)
+
+def main():
+    mat = load_image("image.jpg")
+    shape = mat.shape
+
+
+
+
+
+
+
+
+#IV ecriture dans un fichier
+def ecritureimginfo(path:str, type_fichier:str, hauteur:str, largeur:str, codes_patchs):
+    with open(path, "w") as f:
+        f.write(type_fichier.upper() + "\n")
+        dimensions = str(hauteur) + " " + str(largeur)
+        f.write(dimensions + "\n")
+        
+        # Écrire les codes des patchs
+        print(codes_patchs)
+        codes_patchs=str(codes_patchs[0])
+        for i in range (len(codes_patchs)):
+            f.write(codes_patchs[i]+"\n")
+
+
+#V décompression
+
+def lectureBC1(path):
+    listeblocs = [] 
+    with open(path, "r") as f:
+        lignes = f.readlines()[2:]  # On saute les deux premières lignes de description
+        for ligne in lignes:
+            code_bloc = int(ligne.strip())  # Convertit la chaîne en entier
+            listeblocs.append(code_bloc)
+    return listeblocs
+
+
+
+#Q10
+# I:
+# création d'une fonction combinant deux fonctions , la conversion entier > pair de couleurs + indices, et decompression patch
+def decompress_patch(patch_code, palette):
+    # Extraire les couleurs a et b
+    a_index = (patch_code >> 30) & 0x03
+    b_index = (patch_code >> 28) & 0x03
+    a_color = palette[a_index]
+    b_color = palette[b_index]
+
+    # Reconstruire le patch
+    patch = np.zeros((4, 4, 3), dtype=np.uint8)
+    for i in range(4):
+        for j in range(4):
+            color_index = (patch_code >> ((i * 4 + j) * 2)) & 0x03
+            patch[i, j] = palette[color_index]
+
+    return patch, a_color, b_color
+
+
+
+def reconstruct_image(patch_codes, palette, hauteur, largeur,dims):
+    # Initialisation de la liste des blocs
+    blocks = []
+
+    # Décompression des patchs
+    for code in patch_codes:
+        # Décompression du patch à partir du code
+        patch, a_color, b_color = decompress_patch(code, palette)
+        
+        # Ajouter le patch décompressé à la liste des blocs
+        blocks.append(patch)
+
+    # Reconstruire l'image à partir des blocs
+    image_data = join(blocks, (hauteur, largeur,dims))
+
+    return image_data
+
+
+
+#------Zone TESTING-----
+
+
+
 
 mat = load_image("image.jpg")
 shape = mat.shape
 
-blocks = split(add_padding(mat))
-removed = remove_padding(join(blocks, shape), shape)
 
+blocks = split(add_padding(mat))
+a, b = ab_minmax(blocks[0])
+palette = create_palette(a, b)
+patch = create_patch(blocks[0], palette, a, b)
+print(patch)
+print(blocks[0])
+hauteur,largeur,dims=mat.shape[0],mat.shape[1],3
+#test IV:
+ecritureimginfo("result.bc1","bc1",hauteur,largeur,[patch])
+
+#Test V:
+#Q9:
+print(lectureBC1("result.bc1"))
+
+#Q10:
+print(mat.shape)
+#lecture du fichier compressé pour obtenir les dimensions de l'image originelle
+
+
+blocks = split(add_padding(mat))
+patchcodes=lectureBC1("result.bc1")
+final=reconstruct_image(patchcodes, palette, hauteur, largeur,3)
+removed = remove_padding(join(blocks, shape), shape)
+save_image("final.png",final)
 save_image("output.jpg", removed)
+
+
+
+
+
+
+if __name__ == '__main__':
+    main()
