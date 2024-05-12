@@ -121,28 +121,40 @@ def find_nearest(palette: np.ndarray[np.uint8], px: np.ndarray[np.uint8]):
 
     return nearest
 
-def create_patch(block: np.ndarray[np.uint8], palette: np.ndarray[np.uint8], a: int, b: int) -> int:
+def encode_patch(block: np.ndarray[np.uint8], palette: np.ndarray[np.uint8], a: int, b: int) -> int:
     """
     Crée un patch à partir d'un block, une palette, et deux couleurs a et b.
     """
-    res = np.int64(0)
+    res = 0
     for x in range(0, 4):
         for y in range(0, 4):
             idx = find_nearest(palette, block[x, y])
-            res |= np.int64(idx) << ((np.int64(x) * 4 + np.int64(y)) * 2)
+            res |= idx << ((x * 4 + y) * 2)
 
-    shift = 32
-    for (r, g, b) in [detruncate_pixel(color) for color in [a, b]]:
-        res |= np.int64(b) << shift
-        shift += 5
-
-        res |= np.int64(g) << shift
-        shift += 6
-
-        res |= np.int64(r) << shift
-        shift += 5
+    res |= int(b) << 32
+    res |= int(a) << 48
 
     return res
+
+def decode_patch(patch: int) -> np.ndarray[np.uint8]:
+    """
+    Crée un bloc à partir d'un patch.
+    """
+    a = patch >> 48
+    b = patch >> 32 & 0xFFFF
+
+    palette = create_palette(a, b)
+
+    data = np.zeros((4, 4, 3))
+
+    for x in range(4):
+        for y in range(4):
+            i = x * 4 + y
+            idx = (patch >> i * 2) & 0b11
+
+            data[y, x] = detruncate_pixel(palette[idx])
+    
+    return data
 
 def ab_minmax(block: np.ndarray[np.uint8]) -> tuple[int, int]:
     """
@@ -164,21 +176,57 @@ def ab_minmax(block: np.ndarray[np.uint8]) -> tuple[int, int]:
     
     return truncate_pixel(m), truncate_pixel(M)
 
+def encode(path: str, patches: list[int], shape: tuple[int, int]):
+    """
+    Encode une image au format BC1 et la stocke dans un fichier
+    """
+
+    (h, w, _) = shape
+
+    with open(path, "w") as f:
+        # Headers
+        f.write("BC1\n")
+        f.write(f"{h} {w}\n")
+
+        # Data
+        for patch in patches:
+            f.write(f"{str(patch)}\n")
+
+def decode(path: str):
+    """
+    Décode le fichier au chemin d'accès spécifié
+    """
+
+    with open(path, "r") as f:
+        assert f.readline() == "BC1\n"
+        
+        [h, w] = [int(n) for n in f.readline().split()]
+        patches = [int(line) for line in f.readlines()]
+
+        return join([decode_patch(patch) for patch in patches], (h, w, 3))
+
+
 def main():
     mat = load_image("image.jpg")
     shape = mat.shape
 
     blocks = split(add_padding(mat))
-    a, b = ab_minmax(blocks[0])
-    palette = create_palette(a, b)
-    patch = create_patch(blocks[0], palette, a, b)
 
-    print(patch)
-    print(blocks[0])
+    patches = []
+    for block in blocks:
+        a, b = ab_minmax(block)
+        palette = create_palette(a, b)
+
+        patches.append(encode_patch(block, palette, a, b))
+
+    encode("compressed.bc1", patches, shape)
 
     removed = remove_padding(join(blocks, shape), shape)
 
     save_image("output.jpg", removed)
+    data = decode("compressed.bc1")
+
+    save_image("compressed.jpg", remove_padding(data, shape))
 
 if __name__ == '__main__':
     main()
