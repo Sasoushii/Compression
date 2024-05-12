@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from PIL import Image
 
 WELCOME = """
@@ -33,7 +34,7 @@ def padded_shape(shape: tuple[int]) -> tuple[int]:
     """
     Renvoie les dimensions d'une image avec la correction de remplissage
     """
-    res = [n + 4 - n % 4 for n in shape]
+    res = [math.ceil(n / 4) * 4 for n in shape]
     res[2] = 3
     return tuple(res)
 

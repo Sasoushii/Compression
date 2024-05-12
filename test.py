@@ -23,5 +23,11 @@ class Truncate(unittest.TestCase):
         self.assertEqual(main.detruncate_pixel(65535).tolist(), [248, 252, 248])
         self.assertEqual(main.detruncate_pixel(0).tolist(), [0, 0, 0])
 
+class Padding(unittest.TestCase):
+    def test_shape(self):
+        self.assertEqual(main.padded_shape((8, 8, 3)), (8, 8, 3))
+        self.assertEqual(main.padded_shape((7, 8, 3)), (8, 8, 3))
+        self.assertEqual(main.padded_shape((6, 9, 3)), (8, 12, 3))
+
 if __name__ == '__main__':
     unittest.main()
